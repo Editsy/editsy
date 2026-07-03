@@ -1,0 +1,63 @@
+{
+  "name": "@editsy/cli",
+  "version": "0.0.11",
+  "description": "The editsy command line: edit locally, scaffold a project, check content in CI, and diagnose setup",
+  "keywords": [
+    "cms",
+    "content",
+    "typescript",
+    "cli",
+    "git-based"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "bin": {
+    "editsy": "./bin/editsy.js"
+  },
+  "main": "./dist/lib.js",
+  "types": "./dist/lib.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/lib.d.ts",
+      "import": "./dist/lib.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/editsy/editsy.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://editsy.dev",
+  "bugs": "https://github.com/editsy/editsy/issues",
+  "scripts": {
+    "test": "vitest run",
+    "check-types": "tsc --noEmit",
+    "dev": "tsx src/index.ts",
+    "build": "tsup src/index.ts src/lib.ts --format esm --dts -d dist --clean"
+  },
+  "dependencies": {
+    "@editsy/editor": "workspace:*",
+    "diff": "^8.0.2",
+    "jiti": "^2.4.2",
+    "nodemailer": "^7.0.0",
+    "picomatch": "^4.0.2",
+    "tinyglobby": "^0.2.14",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/nodemailer": "^7.0.0",
+    "@types/picomatch": "^4.0.0",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.0",
+    "vitest": "^3.2.0"
+  }
+}

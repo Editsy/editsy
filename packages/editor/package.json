@@ -1,0 +1,46 @@
+{
+  "name": "@editsy/editor",
+  "version": "0.0.11",
+  "description": "The editsy editing UI, served by @editsy/cli and @editsy/next",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/editsy/editsy.git",
+    "directory": "packages/editor"
+  },
+  "homepage": "https://editsy.dev",
+  "bugs": "https://github.com/editsy/editsy/issues",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fontsource/pixelify-sans": "^5.2.0",
+    "@tiptap/extension-link": "^2.26.0",
+    "@tiptap/extension-underline": "^2.26.0",
+    "@tiptap/react": "^2.26.0",
+    "@tiptap/starter-kit": "^2.26.0",
+    "editsy": "workspace:*",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "turndown": "^7.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/turndown": "^5.0.5",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.0"
+  }
+}

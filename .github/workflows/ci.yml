@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # The published packages claim engines >=18.18 (their RUNTIME needs
+        # nothing newer), but the workspace's dev tooling (pnpm 11) requires
+        # Node >=22.13, so the floor can't run this workflow. Test the
+        # supported LTS lines instead.
+        node: ["22", "24"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Build first: @editsy/next type-checks against @editsy/cli's built d.ts.
+      - run: pnpm -r build
+      - run: pnpm -r check-types
+      - run: pnpm -r test
+      # The example site is the living test of AI-CONVENTIONS.md; the
+      # constraint checker must always pass on it.
+      - run: node packages/cli/bin/editsy.js check --root examples/basic-site

@@ -1,0 +1,24 @@
+{
+  "name": "example-basic-site",
+  "private": true,
+  "version": "0.0.2",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "edit": "editsy edit",
+    "check": "editsy check"
+  },
+  "dependencies": {
+    "@editsy/next": "workspace:*",
+    "editsy": "workspace:*",
+    "next": "^15.4.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@editsy/cli": "workspace:*",
+    "@types/react": "^19.1.0",
+    "typescript": "^5.9.3"
+  }
+}

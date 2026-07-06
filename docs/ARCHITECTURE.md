@@ -6,15 +6,16 @@ the [README](../README.md); for the agent contract, see
 
 ## The core idea
 
-Small sites usually keep their copy in typed TypeScript files. editsy
-treats those files as the content database: the editor UI is *inferred*
-from the values in the file, and saves are rewrites of the file itself.
-There is no schema to author, no database, and no separate content store to
-migrate into. Git is the history.
+Small sites usually keep their copy in typed TypeScript files, with JSON
+for config-shaped content and markdown for posts. editsy treats those
+files as the content database: the editor UI is *inferred* from the values
+in each file, and saves are rewrites of the file itself. There is no
+schema to author, no database, and no separate content store to migrate
+into. Git is the history.
 
 ## Content files
 
-A content file is a TS module whose exports are JSON-serializable
+A content file is most often a TS module whose exports are JSON-serializable
 literals: strings, numbers, booleans, arrays, plain objects. No functions,
 no JSX, no computed values, no spreads. That constraint is what makes
 reliable round-tripping possible, and `editsy check` enforces it (CI-friendly,
@@ -60,6 +61,12 @@ replaced, and quoting/list style is preserved.
 
 Files are located by globs, by default `content/**/*.{ts,json,md}` and
 `src/content/**/*.{ts,json,md}`, configurable in `editsy.config.ts`.
+
+New files come from duplicating an existing one in the editor (the "new
+post" workflow for file-per-entry sites): names are sanitized server-side,
+the new path must match the content globs, collisions are refused
+case-insensitively, and in git-backed mode the copy is a commit
+immediately.
 
 ## Field inference
 
@@ -222,7 +229,7 @@ git-backed editors, all good tools. Differences that matter here:
 
 | | Keystatic / Tina / Decap | editsy |
 |---|---|---|
-| Content format | Markdown / YAML / JSON | The TS files the site already has |
+| Content format | Markdown / YAML / JSON | The TS, JSON, and markdown files the site already has |
 | Schema | Config you author | Inferred from the values |
 | Adoption | Restructure content around their model | Point it at existing files |
 | Non-GitHub editor logins | Their hosted cloud services | Self-hosted password/email auth, no service |

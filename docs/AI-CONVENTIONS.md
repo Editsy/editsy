@@ -1,8 +1,9 @@
 # editsy conventions for AI coding agents
 
 You are building or modifying a site that uses **editsy**, a file-based CMS
-that turns typed content files into an editing UI. Follow these rules and the
-site's copy becomes editable by non-developers with zero extra work.
+that turns a site's content files (TypeScript, JSON, or markdown) into an
+editing UI. Follow these rules and the site's copy becomes editable by
+non-developers with zero extra work.
 
 ## The one rule
 
@@ -24,6 +25,8 @@ it.
    `content/projects.ts`. Shared bits (footer, contact details) in
    `content/global.ts`. Default exports and named `export const` both work;
    a file with several exports edits as one form with a section per export.
+   Sites that keep posts in `.md` files can leave them there: frontmatter
+   keys and the body are editable too, under the same content globs.
 2b. Give every `defineCollection` a **template**: the shape and starting
    values of a new item:
 

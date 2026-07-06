@@ -28,8 +28,8 @@ start with "first, install VS Code..."
 
 editsy puts an editing UI on top of the content files you already have,
 so there's no database to run, no hosted dashboard, and no rebuilding your
-site around somebody else's content model. Your `.ts` files stay the source
-of truth, and edits land in them as clean, reviewable diffs.
+site around somebody else's content model. Your files stay the source of
+truth, and edits land in them as clean, reviewable diffs.
 
 ## How it works
 

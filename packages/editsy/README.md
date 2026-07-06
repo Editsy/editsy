@@ -4,9 +4,9 @@
 
 Small Next.js and React sites usually keep their copy in typed TypeScript
 files. That works great right up until someone who doesn't code needs to
-change something. editsy puts an editing UI on top of those files: no
-database, no hosted dashboard, and your `.ts` files stay the source of
-truth.
+change something. editsy puts an editing UI on top of those files (JSON
+and markdown files too): no database, no hosted dashboard, and your files
+stay the source of truth.
 
 Already have files like that? editsy edits plain object/array default
 exports as-is (`as const` and `satisfies` included), with no code changes:

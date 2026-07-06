@@ -46,12 +46,22 @@ first so we can talk it through.
 
 ## Releasing (maintainers)
 
-Versions move in lockstep across packages for now. To cut a release:
+Versions move in lockstep across packages for now, and main only takes
+pull requests, so a release starts as a PR like anything else:
 
 ```sh
+git switch -c release-0.0.x
 pnpm -r exec npm version 0.0.x   # bump each package
 pnpm -r build && pnpm -r test
+git commit -am "release: 0.0.x"
+git push -u origin release-0.0.x # open the PR, let CI pass, merge
+```
+
+Then publish and tag from the merged main:
+
+```sh
+git switch main && git pull
 pnpm publish -r --access public  # prompts for the npm OTP
-git commit -am "release: 0.0.x" && git tag v0.0.x && git push --tags origin main
+git tag v0.0.x && git push origin v0.0.x
 ```
 

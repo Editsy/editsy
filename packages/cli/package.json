@@ -1,6 +1,6 @@
 {
   "name": "@editsy/cli",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "The editsy command line: edit locally, scaffold a project, check content in CI, and diagnose setup",
   "keywords": [
     "cms",

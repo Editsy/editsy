@@ -1,6 +1,6 @@
 {
   "name": "@editsy/next",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Serve the editsy content editor from your deployed Next.js site: editors log in, edit, and publish as git commits",
   "keywords": [
     "cms",

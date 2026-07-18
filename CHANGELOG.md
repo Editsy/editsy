@@ -19,6 +19,10 @@ All packages (`editsy`, `@editsy/cli`, `@editsy/editor`, `@editsy/next`,
   purpose until agent auth has a design worth trusting. The protocol layer
   is a deliberately small stdio implementation (tools only, one module), so
   the package adds no new third-party dependencies.
+- **`editsy init` scaffolds an `AGENTS.md`** carrying the editsy
+  conventions, so agent-built sites start editable. Create-only like the
+  rest of init: an existing AGENTS.md that mentions editsy is left in
+  peace, and one that doesn't gets a paste-in snippet printed instead.
 
 ## 0.0.11 (2026-07-06)
 

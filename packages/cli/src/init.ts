@@ -65,6 +65,36 @@ EDITSY_GITHUB_TOKEN=
 # EDITSY_BASE_URL=https://www.example.com
 `;
 
+const AGENTS_TEMPLATE = `# Working on this site
+
+This site's copy is edited with [editsy](https://editsy.dev): the content
+files are the CMS. Follow these rules and the site stays editable by
+non-developers. The full contract:
+https://github.com/editsy/editsy/blob/main/docs/AI-CONVENTIONS.md
+
+- All human-editable copy lives in content files (see the globs in
+  editsy.config.ts), wrapped in defineContent() or defineCollection().
+  Components import content and render it; never hardcode copy in JSX.
+- Content values are JSON-serializable literals only: no functions, JSX,
+  spreads, or computed values. Use f.markdown(), f.image(), f.date(),
+  f.url(), and f.select() when inference isn't enough.
+- Give every defineCollection a template, so empty collections can grow.
+- Render markdown fields with the Markdown component from editsy/react,
+  and consume content through useEditsy for live preview.
+- Field keys read like form labels; design and layout decisions stay out
+  of content files.
+- When the task is editing content values and the @editsy/mcp server is
+  configured, use its tools instead of editing the files directly.
+- Run \`npx editsy check\` before you finish; it must pass.
+`;
+
+/** The short version, for printing when an AGENTS.md already exists. */
+export const AGENTS_SNIPPET = `This site's copy is edited with editsy (https://editsy.dev); the content
+files are the CMS. Follow
+https://github.com/editsy/editsy/blob/main/docs/AI-CONVENTIONS.md: all
+human-editable copy in content files as JSON-serializable literals,
+rendered through components, and \`npx editsy check\` must pass.`;
+
 /** The exact next.config addition, for printing when the file already exists. */
 export const NEXT_CONFIG_SNIPPET = `  serverExternalPackages: ["@editsy/cli"],
   outputFileTracingIncludes: {
@@ -171,6 +201,24 @@ export async function runInit(root: string): Promise<InitResult> {
 
   if (!hasDependency(pkg, "editsy")) {
     result.notes.push(`Install the runtime (optional but recommended): ${installCommand(root)} editsy`);
+  }
+
+  // Agent instructions: same deal as next.config, never edit a file the
+  // user owns. An AGENTS.md that already talks about editsy is left in
+  // peace; one that doesn't gets the short version to paste in.
+  const agentsPath = join(root, "AGENTS.md");
+  if (existsSync(agentsPath)) {
+    const text = await readFile(agentsPath, "utf8");
+    if (/editsy/i.test(text)) {
+      result.skipped.push("AGENTS.md");
+    } else {
+      result.notes.push(
+        "You already have an AGENTS.md (init never edits files it didn't create). " +
+          `Add a section so agents keep the site editable:\n\n${AGENTS_SNIPPET}`,
+      );
+    }
+  } else {
+    await createIfMissing(root, "AGENTS.md", AGENTS_TEMPLATE, result);
   }
 
   await createIfMissing(root, ".env.example", ENV_EXAMPLE_TEMPLATE, result);

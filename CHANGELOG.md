@@ -3,7 +3,7 @@
 All packages (`editsy`, `@editsy/cli`, `@editsy/editor`, `@editsy/next`,
 `@editsy/mcp`) version in lockstep; one entry covers a release of all of them.
 
-## Unreleased
+## 0.0.12 (2026-07-18)
 
 ### AI agents get the same keys as editors
 

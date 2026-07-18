@@ -1,6 +1,6 @@
 {
   "name": "editsy",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "The little CMS that lives in your repo: edit typed TypeScript content files in the browser",
   "keywords": [
     "cms",

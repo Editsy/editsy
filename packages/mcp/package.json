@@ -1,6 +1,6 @@
 {
   "name": "@editsy/mcp",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "An MCP server for editsy: AI agents read and edit a site's content files through the same safe pipeline as the editor",
   "keywords": [
     "cms",

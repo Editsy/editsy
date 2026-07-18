@@ -129,6 +129,17 @@ editable by construction: all human copy in content files, components
 rendering from them, nothing hardcoded in JSX. Sites written by humans who
 keep to the same habit get the same benefit.
 
+When the task is editing the content itself, there's
+[`@editsy/mcp`](packages/mcp): an MCP server that gives agents the same
+pipeline the editor uses. They read a content file as structured values,
+send back edits, and the save preserves comments and formatting, refuses
+stale writes, and returns a diff to review. Register it with your MCP
+client from the site's repo:
+
+```sh
+claude mcp add editsy -- npx -y @editsy/mcp
+```
+
 ## Status
 
 Pre-alpha. Both modes work end to end, there's a decent test suite (175

@@ -109,6 +109,19 @@ it.
   don't restructure content files when asked to change copy (just change the
   values).
 
+## Editing content values over MCP
+
+The rules above are for building and changing the site's code. When the
+task is editing the *content* (copy changes, new collection items, fixed
+typos, updated dates), prefer the `@editsy/mcp` server when the project has
+it configured: `read_content` returns a file as structured values with a
+field map, `write_content` saves them through editsy's own rewriter
+(comments and formatting survive, stale writes are refused, and you get a
+diff back), and `check_content` validates the project afterward. Editing
+the file text directly works too; the MCP route just adds guardrails, and
+it refuses a save that would leave the file invalid (a `f.select()` value
+outside its options, say) or overwrite a concurrent change.
+
 ## Checklist before you finish a task
 
 - [ ] Every visible string traces to a `content/*.ts` file

@@ -1,7 +1,28 @@
 # Changelog
 
-All four packages (`editsy`, `@editsy/cli`, `@editsy/editor`, `@editsy/next`)
-version in lockstep; one entry covers a release of all of them.
+All packages (`editsy`, `@editsy/cli`, `@editsy/editor`, `@editsy/next`,
+`@editsy/mcp`) version in lockstep; one entry covers a release of all of them.
+
+## Unreleased
+
+### AI agents get the same keys as editors
+
+- **New package `@editsy/mcp`**: an MCP server exposing four tools
+  (`list_content_files`, `read_content`, `write_content`, `check_content`)
+  so AI agents edit content through the same pipeline as the editor UI.
+  Reads return structured values plus a field map (which strings are
+  markdown, which are dates, what a new collection item looks like); writes
+  go through the AST rewriter (comments and formatting survive), demand the
+  rev the agent read (a file changed underneath it is refused, never
+  overwritten), refuse a save that would leave the file invalid, stay
+  inside the content globs, and return a unified diff for review. Local disk only in this release; remote/GitHub mode is out on
+  purpose until agent auth has a design worth trusting. The protocol layer
+  is a deliberately small stdio implementation (tools only, one module), so
+  the package adds no new third-party dependencies.
+- **`editsy init` scaffolds an `AGENTS.md`** carrying the editsy
+  conventions, so agent-built sites start editable. Create-only like the
+  rest of init: an existing AGENTS.md that mentions editsy is left in
+  peace, and one that doesn't gets a paste-in snippet printed instead.
 
 ## 0.0.11 (2026-07-06)
 

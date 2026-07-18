@@ -149,6 +149,28 @@ importers:
         specifier: ^3.2.0
         version: 3.2.6(@types/node@24.13.2)(jiti@2.7.0)(tsx@4.22.4)
 
+  packages/mcp:
+    dependencies:
+      '@editsy/cli':
+        specifier: workspace:*
+        version: link:../cli
+      diff:
+        specifier: ^8.0.2
+        version: 8.0.4
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.13.2
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.16)(tsx@4.22.4)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.6(@types/node@24.13.2)(jiti@2.7.0)(tsx@4.22.4)
+
   packages/next:
     dependencies:
       '@editsy/cli':

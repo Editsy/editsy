@@ -1,0 +1,55 @@
+{
+  "name": "@editsy/mcp",
+  "version": "0.0.11",
+  "description": "An MCP server for editsy: AI agents read and edit a site's content files through the same safe pipeline as the editor",
+  "keywords": [
+    "cms",
+    "content",
+    "typescript",
+    "mcp",
+    "ai-agents"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "bin": {
+    "editsy-mcp": "./bin/editsy-mcp.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/editsy/editsy.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://editsy.dev",
+  "bugs": "https://github.com/editsy/editsy/issues",
+  "scripts": {
+    "test": "vitest run",
+    "check-types": "tsc --noEmit",
+    "build": "tsup src/index.ts src/bin.ts --format esm --dts -d dist --clean"
+  },
+  "dependencies": {
+    "@editsy/cli": "workspace:*",
+    "diff": "^8.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.0"
+  }
+}

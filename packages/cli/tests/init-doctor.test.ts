@@ -35,6 +35,7 @@ describe("editsy init", () => {
     const result = await runInit(root);
     expect(result.created.sort()).toEqual([
       ".env.example",
+      "AGENTS.md",
       "app/editsy/[[...editsy]]/route.ts",
       "editsy.config.ts",
       "next.config.ts",
@@ -91,7 +92,37 @@ describe("editsy init", () => {
   it("skips Next scaffolding in a non-Next project", async () => {
     await makeProject();
     const result = await runInit(root);
-    expect(result.created.sort()).toEqual([".env.example", "editsy.config.ts"]);
+    expect(result.created.sort()).toEqual([".env.example", "AGENTS.md", "editsy.config.ts"]);
+  });
+
+  it("scaffolds an AGENTS.md carrying the conventions", async () => {
+    await makeProject();
+    await runInit(root);
+    const text = await readFile(join(root, "AGENTS.md"), "utf8");
+    expect(text).toContain("AI-CONVENTIONS.md");
+    expect(text).toContain("npx editsy check");
+    expect(text).toContain("@editsy/mcp");
+  });
+
+  it("leaves an AGENTS.md that references the conventions alone, silently", async () => {
+    await makeProject();
+    const original = "# My agents file\n\nFollow editsy's AI-CONVENTIONS.md for content.\n";
+    await writeFile(join(root, "AGENTS.md"), original);
+    const result = await runInit(root);
+    expect(await readFile(join(root, "AGENTS.md"), "utf8")).toBe(original);
+    expect(result.skipped).toContain("AGENTS.md");
+    expect(result.notes.join("\n")).not.toContain("AGENTS.md");
+  });
+
+  it("prints the snippet for an AGENTS.md that merely mentions editsy", async () => {
+    await makeProject();
+    // The word alone doesn't count as carrying the contract.
+    const original = "# My agents file\n\nWe use editsy for content editing.\n";
+    await writeFile(join(root, "AGENTS.md"), original);
+    const result = await runInit(root);
+    expect(await readFile(join(root, "AGENTS.md"), "utf8")).toBe(original);
+    expect(result.created).not.toContain("AGENTS.md");
+    expect(result.notes.join("\n")).toContain("AI-CONVENTIONS.md");
   });
 });
 

@@ -5,8 +5,10 @@ The editsy command line, five commands in all:
 - **`editsy init [--root <dir>]`** scaffolds a project: an
   `editsy.config.ts`, the `/editsy` route (when it finds a Next.js App
   Router), a `next.config.ts` with the deployment blocks, a `.env.example`,
-  and a freshly generated `EDITSY_SECRET`. Strictly create-only; existing
-  files are never touched (it prints snippets instead).
+  an `AGENTS.md` carrying the conventions that keep the site editable when
+  AI agents work on it, and a freshly generated `EDITSY_SECRET`. Strictly
+  create-only; existing files are never touched (it prints snippets
+  instead).
 - **`editsy edit [--port <n>] [--root <dir>] [--no-open]`** serves the local
   content editor over your project's content files. Inferred forms, a diff
   review before every write, conflict detection if something else changed

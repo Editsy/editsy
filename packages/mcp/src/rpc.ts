@@ -19,6 +19,8 @@ export interface ToolDef {
   description: string;
   /** JSON Schema for the arguments object. */
   inputSchema: object;
+  /** MCP tool annotations (readOnlyHint, destructiveHint, ...), shown to clients. */
+  annotations?: object;
   handler: (args: Record<string, unknown>) => Promise<ToolResult>;
 }
 
@@ -70,6 +72,10 @@ export function createDispatcher(opts: ServerOptions): (message: unknown) => Pro
     if (msg.jsonrpc !== "2.0" || typeof msg.method !== "string") {
       return isRequest ? error(id, -32600, "not a JSON-RPC 2.0 request") : undefined;
     }
+    // Notifications never get a response frame, whatever the method; a
+    // client sending e.g. an id-less tools/call gets silence, not a stray
+    // { id: null } that collides with parse-error responses.
+    if (!isRequest) return undefined;
 
     switch (msg.method) {
       case "initialize": {
@@ -85,7 +91,12 @@ export function createDispatcher(opts: ServerOptions): (message: unknown) => Pro
         return result(id, {});
       case "tools/list":
         return result(id, {
-          tools: opts.tools.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })),
+          tools: opts.tools.map(({ name, description, inputSchema, annotations }) => ({
+            name,
+            description,
+            inputSchema,
+            ...(annotations ? { annotations } : {}),
+          })),
         });
       case "tools/call": {
         const name = msg.params?.name;
@@ -103,9 +114,7 @@ export function createDispatcher(opts: ServerOptions): (message: unknown) => Pro
         }
       }
       default:
-        // Unknown notifications (notifications/initialized etc.) are fine to
-        // ignore; unknown requests owe the client an error.
-        return isRequest ? error(id, -32601, `method not found: ${msg.method}`) : undefined;
+        return error(id, -32601, `method not found: ${msg.method}`);
     }
   };
 }
@@ -114,6 +123,7 @@ export function createDispatcher(opts: ServerOptions): (message: unknown) => Pro
 export async function serveStdio(dispatch: (message: unknown) => Promise<JsonRpcResponse | undefined>): Promise<void> {
   const { createInterface } = await import("node:readline");
   const lines = createInterface({ input: process.stdin, terminal: false });
+  const inFlight = new Set<Promise<void>>();
   for await (const line of lines) {
     if (!line.trim()) continue;
     let parsed: unknown;
@@ -123,7 +133,20 @@ export async function serveStdio(dispatch: (message: unknown) => Promise<JsonRpc
       process.stdout.write(JSON.stringify(error(null, -32700, "parse error")) + "\n");
       continue;
     }
-    const response = await dispatch(parsed);
-    if (response) process.stdout.write(JSON.stringify(response) + "\n");
+    // Don't await here: a slow tool call must not block a ping (or another
+    // tool call) queued behind it. JSON-RPC responses correlate by id, so
+    // out-of-order replies are fine, and each write is one atomic line.
+    // A dispatch crash answers -32603 rather than killing the server.
+    const work = dispatch(parsed)
+      .catch((err) => {
+        const id = (parsed as { id?: number | string | null })?.id ?? null;
+        return error(id, -32603, err instanceof Error ? err.message : String(err));
+      })
+      .then((response) => {
+        if (response) process.stdout.write(JSON.stringify(response) + "\n");
+      });
+    inFlight.add(work);
+    void work.finally(() => inFlight.delete(work));
   }
+  await Promise.all(inFlight);
 }

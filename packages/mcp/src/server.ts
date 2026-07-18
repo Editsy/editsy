@@ -101,15 +101,28 @@ export async function writeContentFile(
   root: string,
   file: string,
   values: Value,
-  baseRev?: string,
+  baseRev: string,
 ): Promise<WriteResult> {
+  // Required, same as the editor's save endpoint: without the rev the
+  // caller read, a "conflict check" would compare the file against itself
+  // and a concurrent edit would be silently overwritten.
+  if (!baseRev || typeof baseRev !== "string") {
+    throw new Error("baseRev is required: pass the rev read_content returned for this file");
+  }
   const { backend } = await open(root);
   await ensureContentFile(backend, file);
-  const { text, rev } = await backend.readContent(file);
+  const { text } = await backend.readContent(file);
   const newText = applyValues(file, text, values);
-  // The backend re-checks the rev at write time, so a file that changed
-  // between our read and the write is refused rather than clobbered.
-  const written = await backend.writeContent(file, newText, { baseRev: baseRev ?? rev });
+  // Refuse a save that would leave the file invalid (an f.select value
+  // outside its options, say). Issues the file already had don't block
+  // an unrelated edit, or a fix.
+  const before = new Set(readContent(file, text).issues.map((issue) => issue.message));
+  const introduced = readContent(file, newText).issues.filter((issue) => !before.has(issue.message));
+  if (introduced.length > 0) {
+    const first = introduced[0]!;
+    throw new Error(`refusing to save ${file}: ${first.message} (line ${first.line})`);
+  }
+  const written = await backend.writeContent(file, newText, { baseRev });
   return { file, rev: written.rev, diff: createTwoFilesPatch(file, file, text, newText) };
 }
 
@@ -122,12 +135,21 @@ export async function checkContent(root: string): Promise<{ ok: boolean; summary
 async function ensureContentFile(backend: LocalDiskBackend, file: string): Promise<void> {
   const files = await backend.listContentFiles();
   if (!files.includes(file)) {
-    throw new Error(`${file} is not a content file (known files: ${files.join(", ") || "none"})`);
+    const shown = files.slice(0, 15);
+    const listed = shown.join(", ") + (files.length > shown.length ? `, and ${files.length - shown.length} more` : "");
+    throw new Error(`${file} is not a content file (known files: ${listed || "none; check the content globs"})`);
   }
 }
 
 function json(value: unknown): ToolResult {
   return { text: JSON.stringify(value, null, 2) };
+}
+
+/** The inputSchema is advertised but nothing enforces it; do the minimum here so errors name the real problem. */
+function requireArg(args: Record<string, unknown>, name: string, type?: "string"): void {
+  if (!(name in args) || args[name] === undefined || (type && typeof args[name] !== type)) {
+    throw new Error(`missing required argument: ${name}${type ? ` (a ${type})` : ""}`);
+  }
 }
 
 const VALUES_HELP =
@@ -150,6 +172,7 @@ export function createEditsyMcp(root: string): ServerOptions {
         "List the editable content files of this editsy project (the files matching its content globs). " +
         "Start here; other tools only accept paths from this list.",
       inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true },
       handler: async () => json(await listContentFiles(root)),
     },
     {
@@ -166,14 +189,19 @@ export function createEditsyMcp(root: string): ServerOptions {
         required: ["file"],
         additionalProperties: false,
       },
-      handler: async (args) => json(await readContentFile(root, String(args.file))),
+      annotations: { readOnlyHint: true },
+      handler: async (args) => {
+        requireArg(args, "file", "string");
+        return json(await readContentFile(root, args.file as string));
+      },
     },
     {
       name: "write_content",
       description:
         "Save edited values into a content file and return a unified diff of what changed. " +
         VALUES_HELP +
-        " Pass `baseRev` from read_content so a file that changed underneath you is refused instead of overwritten.",
+        " `baseRev` must be the rev read_content returned; a file that changed since that read is refused " +
+        "instead of overwritten, and a save that would leave the file invalid is refused too.",
       inputSchema: {
         type: "object",
         properties: {
@@ -181,18 +209,18 @@ export function createEditsyMcp(root: string): ServerOptions {
           values: { description: "The edited values tree, in the shape read_content returned" },
           baseRev: { type: "string", description: "The rev this edit was based on, from read_content" },
         },
-        required: ["file", "values"],
+        required: ["file", "values", "baseRev"],
         additionalProperties: false,
       },
-      handler: async (args) =>
-        json(
-          await writeContentFile(
-            root,
-            String(args.file),
-            args.values as Value,
-            args.baseRev === undefined ? undefined : String(args.baseRev),
-          ),
-        ),
+      // Honest hints: it rewrites file values (destructive), but repeating
+      // the same save is a no-op (idempotent) and it never leaves the repo.
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+      handler: async (args) => {
+        requireArg(args, "file", "string");
+        requireArg(args, "values");
+        requireArg(args, "baseRev", "string");
+        return json(await writeContentFile(root, args.file as string, args.values as Value, args.baseRev as string));
+      },
     },
     {
       name: "check_content",
@@ -200,9 +228,12 @@ export function createEditsyMcp(root: string): ServerOptions {
         "Validate every content file in the project (the same check `npx editsy check` runs in CI). " +
         "Run it after a batch of edits.",
       inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true },
+      // A failing check is a successful check with bad news, not a tool
+      // error; isError stays for the tool itself breaking.
       handler: async () => {
         const check = await checkContent(root);
-        return { text: check.summary, isError: !check.ok };
+        return { text: check.summary };
       },
     },
   ];

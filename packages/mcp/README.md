@@ -57,6 +57,10 @@ GitHub backend or publish commits, and it has no auth of its own, the same
 trust model as running `editsy edit` locally. If an agent should not be
 able to edit your working tree, don't give it this server.
 
+One caveat on the containment: the path checks are lexical, so a symlink
+sitting inside your content tree is followed wherever it points. Don't
+keep symlinks to files agents shouldn't reach.
+
 Building a site with an agent rather than editing content? That contract
 is [AI-CONVENTIONS.md](https://github.com/editsy/editsy/blob/main/docs/AI-CONVENTIONS.md).
 

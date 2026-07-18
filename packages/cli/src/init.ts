@@ -116,9 +116,15 @@ async function createIfMissing(
     return;
   }
   await mkdir(dirname(path), { recursive: true });
-  // "wx": refuse to overwrite even if the file appeared since the check.
-  await writeFile(path, content, { flag: "wx" });
-  result.created.push(rel);
+  try {
+    // "wx": refuse to overwrite even if the file appeared since the check.
+    await writeFile(path, content, { flag: "wx" });
+    result.created.push(rel);
+  } catch (err) {
+    // The file appearing between the check and the write is a skip, not a crash.
+    if ((err as NodeJS.ErrnoException).code === "EEXIST") result.skipped.push(rel);
+    else throw err;
+  }
 }
 
 async function readPackageJson(root: string): Promise<Record<string, unknown> | undefined> {
@@ -209,12 +215,14 @@ export async function runInit(root: string): Promise<InitResult> {
   const agentsPath = join(root, "AGENTS.md");
   if (existsSync(agentsPath)) {
     const text = await readFile(agentsPath, "utf8");
-    if (/editsy/i.test(text)) {
+    // Mentioning editsy isn't the same as carrying the contract; only a
+    // reference to the conventions doc counts as covered.
+    if (/AI-CONVENTIONS/i.test(text)) {
       result.skipped.push("AGENTS.md");
     } else {
       result.notes.push(
-        "You already have an AGENTS.md (init never edits files it didn't create). " +
-          `Add a section so agents keep the site editable:\n\n${AGENTS_SNIPPET}`,
+        "Your AGENTS.md doesn't reference the editsy conventions (init never edits files it didn't " +
+          `create). Add a section so agents keep the site editable:\n\n${AGENTS_SNIPPET}`,
       );
     }
   } else {

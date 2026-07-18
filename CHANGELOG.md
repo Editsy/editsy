@@ -12,10 +12,10 @@ All packages (`editsy`, `@editsy/cli`, `@editsy/editor`, `@editsy/next`,
   so AI agents edit content through the same pipeline as the editor UI.
   Reads return structured values plus a field map (which strings are
   markdown, which are dates, what a new collection item looks like); writes
-  go through the AST rewriter (comments and formatting survive), carry rev
-  conflict checks (a file changed underneath the agent is refused, never
-  overwritten), stay inside the content globs, and return a unified diff
-  for review. Local disk only in this release; remote/GitHub mode is out on
+  go through the AST rewriter (comments and formatting survive), demand the
+  rev the agent read (a file changed underneath it is refused, never
+  overwritten), refuse a save that would leave the file invalid, stay
+  inside the content globs, and return a unified diff for review. Local disk only in this release; remote/GitHub mode is out on
   purpose until agent auth has a design worth trusting. The protocol layer
   is a deliberately small stdio implementation (tools only, one module), so
   the package adds no new third-party dependencies.

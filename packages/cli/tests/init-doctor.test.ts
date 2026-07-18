@@ -104,9 +104,9 @@ describe("editsy init", () => {
     expect(text).toContain("@editsy/mcp");
   });
 
-  it("leaves an AGENTS.md that already covers editsy alone, silently", async () => {
+  it("leaves an AGENTS.md that references the conventions alone, silently", async () => {
     await makeProject();
-    const original = "# My agents file\n\nWe use editsy; see docs/editing.md.\n";
+    const original = "# My agents file\n\nFollow editsy's AI-CONVENTIONS.md for content.\n";
     await writeFile(join(root, "AGENTS.md"), original);
     const result = await runInit(root);
     expect(await readFile(join(root, "AGENTS.md"), "utf8")).toBe(original);
@@ -114,9 +114,10 @@ describe("editsy init", () => {
     expect(result.notes.join("\n")).not.toContain("AGENTS.md");
   });
 
-  it("prints the snippet instead of editing an AGENTS.md that doesn't mention editsy", async () => {
+  it("prints the snippet for an AGENTS.md that merely mentions editsy", async () => {
     await makeProject();
-    const original = "# My agents file\n\nBe nice to the linter.\n";
+    // The word alone doesn't count as carrying the contract.
+    const original = "# My agents file\n\nWe use editsy for content editing.\n";
     await writeFile(join(root, "AGENTS.md"), original);
     const result = await runInit(root);
     expect(await readFile(join(root, "AGENTS.md"), "utf8")).toBe(original);

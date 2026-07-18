@@ -8,13 +8,23 @@ import { resolve } from "node:path";
 import { createDispatcher, serveStdio } from "./rpc.js";
 import { createEditsyMcp } from "./server.js";
 
+const USAGE = "usage: editsy-mcp [--root <project dir>]";
 const args = process.argv.slice(2);
 let root = process.cwd();
 for (let i = 0; i < args.length; i++) {
-  if (args[i] === "--root" && args[i + 1]) root = resolve(args[++i]!);
-  else if (args[i] === "--help" || args[i] === "-h") {
-    console.error("usage: editsy-mcp [--root <project dir>]");
+  if (args[i] === "--root") {
+    const value = args[++i];
+    if (!value) {
+      console.error(`--root needs a directory\n${USAGE}`);
+      process.exit(1);
+    }
+    root = resolve(value);
+  } else if (args[i] === "--help" || args[i] === "-h") {
+    console.error(USAGE);
     process.exit(0);
+  } else {
+    console.error(`unknown option: ${args[i]}\n${USAGE}`);
+    process.exit(1);
   }
 }
 

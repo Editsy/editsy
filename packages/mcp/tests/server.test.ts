@@ -14,8 +14,29 @@ export default defineContent({
     heading: "Hello there",
     body: f.markdown("Some *text*"),
   },
+  status: f.select("draft", ["draft", "live"]),
   visits: 3,
 });
+`;
+
+const ABOUT_TS = `import { defineContent } from "editsy";
+
+export const intro = defineContent({ heading: "About us" });
+export const outro = defineContent({ closing: "Bye for now" });
+`;
+
+const SETTINGS_JSON = `{
+  "site": { "name": "Test site" },
+  "perPage": 5
+}
+`;
+
+const NOTES_MD = `---
+title: Field notes
+draft: true
+---
+
+The body is editable too.
 `;
 
 const POSTS_TS = `import { defineCollection } from "editsy";
@@ -36,6 +57,9 @@ beforeEach(async () => {
   await mkdir(join(root, "content"), { recursive: true });
   await writeFile(join(root, "content", "home.ts"), HOME_TS);
   await writeFile(join(root, "content", "posts.ts"), POSTS_TS);
+  await writeFile(join(root, "content", "notes.md"), NOTES_MD);
+  await writeFile(join(root, "content", "about.ts"), ABOUT_TS);
+  await writeFile(join(root, "content", "settings.json"), SETTINGS_JSON);
 });
 
 afterEach(async () => {
@@ -45,7 +69,47 @@ afterEach(async () => {
 describe("ops", () => {
   it("lists content files under the default globs", async () => {
     const { files } = await listContentFiles(root);
-    expect(files).toEqual(["content/home.ts", "content/posts.ts"]);
+    expect(files).toEqual([
+      "content/about.ts",
+      "content/home.ts",
+      "content/notes.md",
+      "content/posts.ts",
+      "content/settings.json",
+    ]);
+  });
+
+  it("round-trips a multi-export file, values keyed by export name", async () => {
+    const doc = await readContentFile(root, "content/about.ts");
+    expect(doc.exports).toEqual(["intro", "outro"]);
+    const values = structuredClone(doc.values) as { intro: { heading: string }; outro: { closing: string } };
+    values.outro.closing = "See you soon";
+    await writeContentFile(root, "content/about.ts", values as unknown as Value, doc.rev);
+    const text = await readFile(join(root, "content", "about.ts"), "utf8");
+    expect(text).toContain('closing: "See you soon"');
+    expect(text).toContain('heading: "About us"');
+  });
+
+  it("round-trips a JSON file and keeps it parseable", async () => {
+    const doc = await readContentFile(root, "content/settings.json");
+    const values = structuredClone(doc.values) as { site: { name: string }; perPage: number };
+    values.site.name = "Renamed site";
+    values.perPage = 10;
+    await writeContentFile(root, "content/settings.json", values as unknown as Value, doc.rev);
+    const text = await readFile(join(root, "content", "settings.json"), "utf8");
+    expect(JSON.parse(text)).toEqual({ site: { name: "Renamed site" }, perPage: 10 });
+  });
+
+  it("round-trips a markdown file: frontmatter and body", async () => {
+    const doc = await readContentFile(root, "content/notes.md");
+    expect(doc.fields).toMatchObject({ title: "text", draft: "boolean" });
+    const values = structuredClone(doc.values) as { title: string; draft: boolean; body: string };
+    values.draft = false;
+    values.body = "A rewritten body.\n";
+    await writeContentFile(root, "content/notes.md", values, doc.rev);
+    const text = await readFile(join(root, "content", "notes.md"), "utf8");
+    expect(text).toContain("draft: false");
+    expect(text).toContain("A rewritten body.");
+    expect(text).toContain("title: Field notes");
   });
 
   it("reads a file into fields and values", async () => {
@@ -85,6 +149,27 @@ describe("ops", () => {
     expect(titles).toEqual(["Second post", "Third post"]);
   });
 
+  it("demands baseRev; omitting it must not silently bypass the conflict check", async () => {
+    const doc = await readContentFile(root, "content/home.ts");
+    const values = structuredClone(doc.values) as { hero: { heading: string } };
+    values.hero.heading = "No rev supplied";
+    await expect(
+      writeContentFile(root, "content/home.ts", values, undefined as unknown as string),
+    ).rejects.toThrow(/baseRev is required/);
+  });
+
+  it("refuses a save that would leave the file invalid, allows valid edits and fixes", async () => {
+    const doc = await readContentFile(root, "content/home.ts");
+    const values = structuredClone(doc.values) as { status: string };
+    values.status = "nonsense";
+    await expect(writeContentFile(root, "content/home.ts", values, doc.rev)).rejects.toThrow(
+      /refusing to save/,
+    );
+    values.status = "live";
+    const ok = await writeContentFile(root, "content/home.ts", values, doc.rev);
+    expect(ok.diff).toContain('+  status: f.select("live", ["draft", "live"])');
+  });
+
   it("refuses a stale baseRev instead of overwriting", async () => {
     const doc = await readContentFile(root, "content/home.ts");
     await writeFile(join(root, "content", "home.ts"), HOME_TS.replace("Hello there", "Changed elsewhere"));
@@ -96,7 +181,7 @@ describe("ops", () => {
   it("refuses paths outside the content globs", async () => {
     await writeFile(join(root, "package.json"), "{}");
     await expect(readContentFile(root, "package.json")).rejects.toThrow(/not a content file/);
-    await expect(writeContentFile(root, "../escape.ts", "x")).rejects.toThrow(/not a content file/);
+    await expect(writeContentFile(root, "../escape.ts", "x", "whatever")).rejects.toThrow(/not a content file/);
   });
 
   it("check reports clean and broken projects", async () => {
@@ -158,6 +243,28 @@ describe("protocol", () => {
     expect(check.result.isError).toBeUndefined();
   });
 
+  it("advertises annotations and treats id 0 as a real request", async () => {
+    const dispatch = createDispatcher(createEditsyMcp(root));
+    const listed = (await dispatch(rpc("tools/list", undefined, 0))) as {
+      id: number;
+      result: { tools: { name: string; annotations?: { readOnlyHint?: boolean; destructiveHint?: boolean } }[] };
+    };
+    expect(listed.id).toBe(0);
+    const byName = Object.fromEntries(listed.result.tools.map((t) => [t.name, t.annotations]));
+    expect(byName.read_content).toMatchObject({ readOnlyHint: true });
+    expect(byName.write_content).toMatchObject({ readOnlyHint: false, destructiveHint: true });
+  });
+
+  it("reports a failing check as a result, not a tool error", async () => {
+    await writeFile(join(root, "content", "bad.ts"), "export default { oops: () => 1 };\n");
+    const dispatch = createDispatcher(createEditsyMcp(root));
+    const check = (await dispatch(rpc("tools/call", { name: "check_content", arguments: {} }))) as {
+      result: { isError?: boolean; content: [{ text: string }] };
+    };
+    expect(check.result.isError).toBeUndefined();
+    expect(check.result.content[0].text).toContain("bad.ts");
+  });
+
   it("reports tool failures in-band and protocol misuse as errors", async () => {
     const dispatch = createDispatcher(createEditsyMcp(root));
     const bad = (await dispatch(rpc("tools/call", { name: "read_content", arguments: { file: "nope.ts" } }))) as {
@@ -170,5 +277,7 @@ describe("protocol", () => {
     const unknownMethod = (await dispatch(rpc("resources/list"))) as { error: { code: number } };
     expect(unknownMethod.error.code).toBe(-32601);
     expect(await dispatch("not an object")).toMatchObject({ error: { code: -32600 } });
+    // An id-less tools/call is a notification; it gets silence, not a stray id:null frame.
+    expect(await dispatch(rpc("tools/call", { name: "check_content", arguments: {} }, null))).toBeUndefined();
   });
 });

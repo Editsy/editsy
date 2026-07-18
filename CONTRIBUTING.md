@@ -7,6 +7,7 @@ packages/editsy   the runtime (defineContent, f.*), tiny on purpose
 packages/cli      AST engine, check, the edit server, auth, backends
 packages/editor   the web UI (Vite + React)
 packages/next     the "admin on your deployed site" adapter
+packages/mcp      the MCP server for AI agents (stdio, tools only)
 examples/basic-site   a small Next.js site used for docs, tests, demos
 docs/             architecture decisions + the AI agent conventions
 ```

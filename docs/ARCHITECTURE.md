@@ -217,6 +217,8 @@ packages/cli      `editsy` CLI + the API core, backends, auth (also the
                   programmatic API adapters build on)
 packages/editor   the editing UI (Vite + React), served by cli and next
 packages/next     the deployed-site adapter (one route + env vars)
+packages/mcp      MCP server: AI agents read/write content through the
+                  same pipeline (see AI-CONVENTIONS.md)
 examples/basic-site  a small Next.js site used for docs, tests, demos
 ```
 
